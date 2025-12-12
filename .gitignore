@@ -1,0 +1,35 @@
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+
+# Archivos de usuario
+uploads/*.mp4
+uploads/*.txt
+uploads/chunks_*
+
+# Archivos temporales
+*.log
+*.tmp
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ejecutables y binarios grandes
+AI_Transcriber.exe
+ffmpeg.exe
+ffprobe.exe
