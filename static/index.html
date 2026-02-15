@@ -126,24 +126,30 @@
                         <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
                         <path d="M12 6v6l4 2"></path>
                     </svg>
-                    <h3>ANÁLISIS DE IA</h3>
+                    <h3>ESTUDIANTE IA - COPILOT</h3>
                 </div>
-                <textarea id="aiPrompt"
-                    placeholder="Comando para la IA (ej: Resume en 3 puntos clave, extrae las fechas importantes, etc.)..."
-                    rows="4" style="margin-bottom: 10px;"></textarea>
-                <button onclick="generateSummary()" id="btnSummary"
-                    style="background: linear-gradient(45deg, var(--accent-purple), #ff0055); color: white;">EJECUTAR
-                    ANÁLISIS</button>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button onclick="generateStudyGuide()" id="btnStudyGuide"
+                        style="background: linear-gradient(45deg, #00d2ff, #3a7bd5); color: white; flex: 1;">
+                        ✨ GENERAR GUÍA DE ESTUDIO
+                    </button>
+                    <button onclick="exportToNotebookLM()" id="btnExportMD"
+                        style="background: linear-gradient(45deg, #2ecc71, #27ae60); color: white; flex: 1;">
+                        📓 EXPORTAR PARA NOTEBOOKLM
+                    </button>
+                </div>
+
+                <div style="position: relative;">
+                    <textarea id="aiPrompt"
+                        placeholder="Haz una pregunta sobre la clase o pide algo específico (ej: 'Explica el término X')..."
+                        rows="3" style="margin-bottom: 10px;"></textarea>
+                    <button onclick="generateCustomAnalysis()" id="btnSummary"
+                        style="background: linear-gradient(45deg, var(--accent-purple), #ff0055); color: white;">ENVIAR PREGUNTA</button>
+                </div>
 
                 <div id="summaryResultContainer" class="hidden">
-                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-                        <button
-                            onclick="downloadText('resumen_ia.txt', document.getElementById('summaryResult').innerText)"
-                            style="background: #333; color: var(--text-primary); padding: 5px 15px; font-size: 0.8rem; width: auto; margin: 0; border: 1px solid #555;">
-                            ⬇ EXPORTAR RESUMEN
-                        </button>
-                    </div>
-                    <div id="summaryResult" class="ai-result"></div>
+                    <div id="summaryResult" class="ai-result markdown-body"></div>
                 </div>
             </div>
         </div>
@@ -369,42 +375,106 @@
             document.getElementById('transcriptionResult').value = text;
         }
 
-        async function generateSummary() {
-            const text = document.getElementById('transcriptionResult').value;
+        async function generateStudyGuide() {
+            const btn = document.getElementById('btnStudyGuide');
+            btn.disabled = true;
+            btn.innerText = "GENERANDO GUÍA...";
+            
+            await callAnalyze(""); // Empty prompt triggers study guide
+            
+            btn.disabled = false;
+            btn.innerText = "✨ GENERAR GUÍA DE ESTUDIO";
+        }
+
+        async function generateCustomAnalysis() {
             const prompt = document.getElementById('aiPrompt').value;
-            const model = document.getElementById('summaryModel').value;
+            if (!prompt) {
+                alert("Por favor ingrese una pregunta o instrucción");
+                return;
+            }
+            
             const btn = document.getElementById('btnSummary');
+            btn.disabled = true;
+            btn.innerText = "PROCESANDO...";
+            
+            await callAnalyze(prompt);
+            
+            btn.disabled = false;
+            btn.innerText = "ENVIAR PREGUNTA";
+        }
+
+        async function callAnalyze(prompt) {
+            const text = document.getElementById('transcriptionResult').value;
+            const model = document.getElementById('summaryModel').value;
             const container = document.getElementById('summaryResultContainer');
             const resultDiv = document.getElementById('summaryResult');
 
-            if (!prompt) {
-                alert("Por favor ingrese una instrucción para la IA");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "ANALIZANDO...";
-
             try {
-                const response = await fetch('/summary', {
+                const response = await fetch('/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         text: text,
                         prompt: prompt,
-                        model: model
+                        model: model,
+                        job_id: currentJobId
                     })
                 });
 
                 const data = await response.json();
-
                 container.classList.remove('hidden');
-                resultDiv.innerHTML = data.summary.replace(/\n/g, '<br>');
+                // Simple markdown-to-html conversion for the presentation
+                let formatted = data.analysis
+                    .replace(/### (.*)/g, '<h3>$1</h3>')
+                    .replace(/## (.*)/g, '<h2>$1</h2>')
+                    .replace(/\*\* (.*)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n\n/g, '<p></p>')
+                    .replace(/\n/g, '<br>');
+                
+                resultDiv.innerHTML = formatted;
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
             } catch (e) {
-                alert("Error generando resumen: " + e);
+                alert("Error en el análisis: " + e);
+            }
+        }
+
+        async function exportToNotebookLM() {
+            if (!currentJobId) {
+                alert("Primero debes procesar un video");
+                return;
+            }
+            
+            const btn = document.getElementById('btnExportMD');
+            btn.disabled = true;
+            btn.innerText = "PREPARANDO EXPORTACIÓN...";
+
+            try {
+                const response = await fetch('/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_id: currentJobId,
+                        include_analysis: true
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `clase_notebooklm_${currentJobId}.md`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert("Error exportando archivo");
+                }
+            } catch (e) {
+                alert("Error de conexión: " + e);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "EJECUTAR ANÁLISIS";
+                btn.innerText = "📓 EXPORTAR PARA NOTEBOOKLM";
             }
         }
 

@@ -6,9 +6,13 @@ __pycache__/
 .Python
 
 # Entornos virtuales
+.venv/
 venv/
 env/
 ENV/
+
+# Variables de entorno (IMPORTANTE: protege API keys)
+.env
 
 # Archivos de usuario
 uploads/*.mp4
@@ -18,6 +22,7 @@ uploads/chunks_*
 # Archivos temporales
 *.log
 *.tmp
+server_log.txt
 
 # Archivos del sistema
 .DS_Store
@@ -28,6 +33,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+*.code-workspace
 
 # Ejecutables y binarios grandes
 AI_Transcriber.exe

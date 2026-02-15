@@ -276,12 +276,18 @@ textarea#aiPrompt {
 
 .ai-result {
     margin-top: 20px;
-    padding: 20px;
-    background: rgba(188, 19, 254, 0.05);
-    border-left: 3px solid var(--accent-purple);
-    border-radius: 0 8px 8px 0;
-    line-height: 1.6;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(188, 19, 254, 0.2);
+    border-radius: 12px;
+    line-height: 1.7;
+    font-size: 1rem;
+    color: var(--text-primary);
 }
+
+.ai-result h2 { color: var(--accent-cyan); font-size: 1.4rem; margin-top: 20px; }
+.ai-result h3 { color: var(--accent-purple); font-size: 1.2rem; margin-top: 15px; }
+.ai-result strong { color: var(--success); }
 
 .hidden {
     display: none !important;
